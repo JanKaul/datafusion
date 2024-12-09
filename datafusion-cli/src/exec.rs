@@ -28,6 +28,7 @@ use crate::print_format::PrintFormat;
 use crate::{
     command::{Command, OutputFormat},
     helper::{unescape_input, CliHelper},
+    iceberg::transform_iceberg_input,
     object_storage::get_object_store,
     print_options::{MaxRows, PrintOptions},
 };
@@ -223,7 +224,10 @@ pub(super) async fn exec_and_print(
         )
     })?;
 
-    let statements = DFParser::parse_sql_with_dialect(&sql, dialect.as_ref())?;
+    let statements = DFParser::parse_sql_with_dialect(
+        &transform_iceberg_input(&sql),
+        dialect.as_ref(),
+    )?;
     for statement in statements {
         let adjusted =
             AdjustedPrintOptions::new(print_options.clone()).with_statement(&statement);

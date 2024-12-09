@@ -27,7 +27,7 @@ use datafusion::{
     logical_expr::{LogicalPlan, LogicalPlanBuilder},
     prelude::SessionContext,
 };
-use datafusion_cli::{
+use frostbow_cli::{
     cli_context::CliSessionContext, exec::exec_from_repl, print_options::PrintOptions,
 };
 use object_store::ObjectStore;
@@ -85,9 +85,9 @@ pub async fn main() {
     let my_ctx = MyUnionerContext::default();
 
     let mut print_options = PrintOptions {
-        format: datafusion_cli::print_format::PrintFormat::Automatic,
+        format: frostbow_cli::print_format::PrintFormat::Automatic,
         quiet: false,
-        maxrows: datafusion_cli::print_options::MaxRows::Unlimited,
+        maxrows: frostbow_cli::print_options::MaxRows::Unlimited,
         color: true,
     };
 

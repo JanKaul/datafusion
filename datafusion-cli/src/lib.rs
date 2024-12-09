@@ -25,6 +25,7 @@ pub mod exec;
 pub mod functions;
 pub mod helper;
 pub mod highlighter;
+pub(crate) mod iceberg;
 pub mod object_storage;
 pub mod pool_type;
 pub mod print_format;
