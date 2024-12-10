@@ -2,7 +2,12 @@ use regex::Regex;
 
 pub(crate) fn transform_iceberg_input(input: &str) -> String {
     let re = Regex::new(r"(?i)create\s+table").unwrap();
-    re.replace_all(input, "create external table").to_string()
+    let input = re.replace_all(input, "CREATE EXTERNAL TABLE");
+
+    let re = Regex::new(r"(?i)create\s+materialized\s+view").unwrap();
+    let input = re.replace_all(&input, "CREATE TEMPORARY VIEW");
+
+    input.to_string()
 }
 
 #[cfg(test)]

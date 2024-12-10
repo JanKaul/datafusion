@@ -316,15 +316,17 @@ async fn create_plan(
     // datafusion-cli specific options before passing through to datafusion. Otherwise, datafusion
     // will raise Configuration errors.
     if let LogicalPlan::Ddl(DdlStatement::CreateExternalTable(cmd)) = &plan {
-        // To support custom formats, treat error as None
-        let format = config_file_type_from_str(&cmd.file_type);
-        register_object_store_and_config_extensions(
-            ctx,
-            &cmd.location,
-            &cmd.options,
-            format,
-        )
-        .await?;
+        if !(cmd.file_type.to_lowercase() == "iceberg") {
+            // To support custom formats, treat error as None
+            let format = config_file_type_from_str(&cmd.file_type);
+            register_object_store_and_config_extensions(
+                ctx,
+                &cmd.location,
+                &cmd.options,
+                format,
+            )
+            .await?;
+        }
     }
 
     if let LogicalPlan::Copy(copy_to) = &mut plan {

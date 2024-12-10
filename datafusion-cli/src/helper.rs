@@ -21,6 +21,7 @@
 use std::borrow::Cow;
 
 use crate::highlighter::{NoSyntaxHighlighter, SyntaxHighlighter};
+use crate::iceberg::transform_iceberg_input;
 
 use datafusion::common::sql_datafusion_err;
 use datafusion::error::DataFusionError;
@@ -83,7 +84,10 @@ impl CliHelper {
             };
             let lines = split_from_semicolon(sql);
             for line in lines {
-                match DFParser::parse_sql_with_dialect(&line, dialect.as_ref()) {
+                match DFParser::parse_sql_with_dialect(
+                    &transform_iceberg_input(&line),
+                    dialect.as_ref(),
+                ) {
                     Ok(statements) if statements.is_empty() => {
                         return Ok(ValidationResult::Invalid(Some(
                             "  🤔 You entered an empty statement".to_string(),
