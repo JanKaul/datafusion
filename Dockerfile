@@ -1,6 +1,6 @@
 # Multi-stage Docker build for datafusion-cli
 # Build stage
-FROM rust:1.86-slim as builder
+FROM rust:1.87-slim as builder
 
 # Install system dependencies needed for building
 RUN apt-get update && apt-get install -y \
