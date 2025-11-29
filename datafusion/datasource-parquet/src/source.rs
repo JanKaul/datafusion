@@ -451,6 +451,11 @@ impl ParquetSource {
         self.table_parquet_options.global.max_predicate_cache_size
     }
 
+    /// Returns whether row numbers should be enabled
+    fn enable_row_numbers(&self) -> bool {
+        self.table_parquet_options.global.enable_row_numbers
+    }
+
     /// Applies schema adapter factory from the FileScanConfig if present.
     ///
     /// # Arguments
@@ -606,6 +611,7 @@ impl FileSource for ParquetSource {
             #[cfg(feature = "parquet_encryption")]
             encryption_factory: self.get_encryption_factory_with_config(),
             max_predicate_cache_size: self.max_predicate_cache_size(),
+            enable_row_numbers: self.enable_row_numbers(),
         }) as Arc<dyn FileOpener>;
         opener = ProjectionOpener::try_new(
             split_projection.clone(),

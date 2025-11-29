@@ -211,6 +211,7 @@ impl ParquetOptions {
             coerce_int96: _,     // not used for writer props
             skip_arrow_metadata: _,
             max_predicate_cache_size: _,
+            enable_row_numbers: _, // not used for writer props
         } = self;
 
         let mut builder = WriterProperties::builder()

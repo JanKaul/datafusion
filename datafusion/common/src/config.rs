@@ -722,6 +722,12 @@ config_namespace! {
         /// (reading) Use any available bloom filters when reading parquet files
         pub bloom_filter_on_read: bool, default = true
 
+        /// (reading) If true, the parquet reader will provide a virtual "row_number" column
+        /// containing sequential row numbers starting from 1 for each row group in the file.
+        /// Note: This column will appear in the schema and SELECT * queries. If the file already
+        /// contains a column named "row_number", an error will be raised.
+        pub enable_row_numbers: bool, default = false
+
         /// (reading) The maximum predicate cache size, in bytes. When
         /// `pushdown_filters` is enabled, sets the maximum memory used to cache
         /// the results of predicate evaluation between filter evaluation and

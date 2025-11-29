@@ -30,7 +30,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use arrow::datatypes::{FieldRef, SchemaRef, TimeUnit};
+use arrow::datatypes::{DataType, Field, FieldRef, Schema, SchemaRef, TimeUnit};
 use datafusion_common::encryption::FileDecryptionProperties;
 
 use datafusion_common::{exec_err, DataFusionError, Result};
@@ -55,6 +55,7 @@ use log::debug;
 use parquet::arrow::arrow_reader::metrics::ArrowReaderMetrics;
 use parquet::arrow::arrow_reader::{ArrowReaderMetadata, ArrowReaderOptions};
 use parquet::arrow::async_reader::AsyncFileReader;
+use parquet::arrow::schema::virtual_type::RowNumber;
 use parquet::arrow::{ParquetRecordBatchStreamBuilder, ProjectionMask};
 use parquet::file::metadata::{PageIndexPolicy, ParquetMetaDataReader};
 
@@ -111,6 +112,8 @@ pub(super) struct ParquetOpener {
     /// Maximum size of the predicate cache, in bytes. If none, uses
     /// the arrow-rs default.
     pub max_predicate_cache_size: Option<usize>,
+    /// Whether to include a virtual row_number column
+    pub enable_row_numbers: bool,
 }
 
 impl FileOpener for ParquetOpener {
@@ -162,6 +165,7 @@ impl FileOpener for ParquetOpener {
         #[cfg(feature = "parquet_encryption")]
         let encryption_context = self.get_encryption_context();
         let max_predicate_cache_size = self.max_predicate_cache_size;
+        let enable_row_numbers = self.enable_row_numbers;
 
         Ok(Box::pin(async move {
             #[cfg(feature = "parquet_encryption")]
@@ -260,6 +264,41 @@ impl FileOpener for ParquetOpener {
                         options.clone(),
                     )?;
                 }
+            }
+
+            // Apply virtual columns if row numbers are enabled
+            if enable_row_numbers {
+                // Check for naming conflict with existing columns
+                if physical_file_schema.column_with_name("row_number").is_some() {
+                    return exec_err!(
+                        "Cannot enable row_numbers: Parquet file already contains a column named 'row_number'"
+                    );
+                }
+
+                // Create the row_number virtual column field
+                let row_number_field = Arc::new(
+                    Field::new("row_number", DataType::Int64, false)
+                        .with_extension_type(RowNumber)
+                );
+
+                // Apply virtual columns to the options
+                options = options.with_virtual_columns(vec![row_number_field.clone()])?;
+
+                // Reload metadata with updated options
+                reader_metadata = ArrowReaderMetadata::try_new(
+                    Arc::clone(reader_metadata.metadata()),
+                    options.clone(),
+                )?;
+
+                // Update physical schema to include virtual column
+                let mut physical_schema_fields = physical_file_schema.fields().to_vec();
+                physical_schema_fields.push(row_number_field);
+                physical_file_schema = Arc::new(Schema::new(physical_schema_fields));
+                options = options.with_schema(Arc::clone(&physical_file_schema));
+                reader_metadata = ArrowReaderMetadata::try_new(
+                    Arc::clone(reader_metadata.metadata()),
+                    options.clone(),
+                )?;
             }
 
             // Adapt the predicate to the physical file schema.
